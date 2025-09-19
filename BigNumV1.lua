@@ -257,26 +257,9 @@ function Bn.logn(val: any): Bn
 end
 
 function Bn.log(val1: any, val2: any): Bn
-	val1, val2 = Bn.convert(val1), Bn.convert(val2)
-	if val1 == Bn.NaN or val2 == Bn.NaN then
-		return Bn.NaN
-	elseif val1 == Bn.Zero then
-		return Bn.NegInf
-	elseif val1.man < 0 then
-		return Bn.NaN
-	elseif val2.man <= 0 then
-		return Bn.NaN
-	elseif val1 == Bn.Inf and val2 == Bn.Inf then
-		return Bn.NaN
-	elseif val1 == Bn.Inf then
-		return Bn.Inf
-	elseif val2 == Bn.Inf then
-		return Bn.Zero
-	end
-	local l1 = math.log10(val1.man) + val1.exp
-	local l2 = math.log10(val2.man) + val2.exp
-	local res = l1/l2
-	return Bn.new(1, res)
+	val1, val2 = Bn.convert(val1)
+	val2 = val2 and Bn.toNumber(Bn.convert(val2))
+	return Bn.new(math.sign(val1.exp), math.log10(math.abs(val1.exp)/math.log10(val2)))
 end
 
 function Bn.log10(val: any): Bn
