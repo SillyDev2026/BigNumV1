@@ -342,7 +342,7 @@ function Bn.AddComma(val): string
 	return left .. num:reverse() .. right
 end
 
-function Bn.short(val, digits, canComma)
+function Bn.short(val, digits: number?, canComma: boolean?)
 	canComma = canComma or false
 	val = Bn.convert(val)
 	if val == Bn.NaN then return "NaN" end
