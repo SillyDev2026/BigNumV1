@@ -395,7 +395,7 @@ local inv = 4503599627370496
 local max = 1.7976931348623157e308
 function Bn.lbencode(val)
 	val = Bn.convert(val)
-	local a = Bn.add({1, val.exp}, 1)
+	local a = Bn.add({1, val.exp}, {1, 0})
 	if a.exp ~= a.exp then return 0 end
 	local exp = a.exp
 	if a.exp > max then
@@ -410,7 +410,7 @@ function Bn.lbdecode(val: number): Bn
 	local s = math.sign(val)
 	val = math.abs(val)
 	local new = {1, 10^(val/inv-1)-1}
-	new = Bn.sub(new, 1)
+	new = Bn.sub(new, {1, 0})
 	return {man=s, exp=new.exp}
 end
 
