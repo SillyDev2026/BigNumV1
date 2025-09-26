@@ -358,7 +358,7 @@ function Bn.short(val, digits: number?, canComma: boolean?)
 
 	local base = {"", "k", "m", "b"}
 	if SNumber <= #base-1 then
-		local numStr = Bn.showDigits(baseVal, digits)
+		local numStr = Bn.showDigits(baseVal + 0.001, digits)
 		if canComma and SNumber == 0 then
 			return Bn.AddComma(numStr)
 		else
@@ -378,7 +378,7 @@ function Bn.short(val, digits: number?, canComma: boolean?)
 	end
 	if SNumber < 1000 then
 		suffixpart(SNumber)
-		return sign .. Bn.showDigits(baseVal, digits) .. txt
+		return sign .. Bn.showDigits(baseVal + 0.001, digits) .. txt
 	end
 	local MultOnes = {"Mi","Mc","Na","Pi","Fm","At","Zp","Yc", "Xo", "Ve", "Me", "Due", "Tre", "Te", "Pt", "He", "Hp", "Oct", "En", "Ic", "Mei", "Dui", "Tri", "Teti", "Pti", "Hei", "Hp", "Oci", "Eni", "Tra","TeC","MTc","DTc","TrTc","TeTc","PeTc","HTc","HpT","OcT","EnT","TetC","MTetc","DTetc","TrTetc","TeTetc","PeTetc","HTetc","HpTetc","OcTetc","EnTetc","PcT","MPcT","DPcT","TPCt","TePCt","PePCt","HePCt","HpPct","OcPct","EnPct","HCt","MHcT","DHcT","THCt","TeHCt","PeHCt","HeHCt","HpHct","OcHct","EnHct","HpCt","MHpcT","DHpcT","THpCt","TeHpCt","PeHpCt","HeHpCt","HpHpct","OcHpct","EnHpct","OCt","MOcT","DOcT","TOCt","TeOCt","PeOCt","HeOCt","HpOct","OcOct","EnOct","Ent","MEnT","DEnT","TEnt","TeEnt","PeEnt","HeEnt","HpEnt","OcEnt","EnEnt","Hect", "MeHect"}
 	for i=#MultOnes,1,-1 do
@@ -388,7 +388,78 @@ function Bn.short(val, digits: number?, canComma: boolean?)
 			SNumber = SNumber % 10^(i*3)
 		end
 	end
-	return sign .. Bn.showDigits(baseVal, digits) .. txt
+	return sign .. Bn.showDigits(baseVal + 0.001, digits) .. txt
+end
+
+local inv = 4503599627370496
+local max = 1.7976931348623157e308
+function Bn.lbencode(val)
+	val = Bn.convert(val)
+	local a = Bn.add({1, val.exp}, 1)
+	if a.exp ~= a.exp then return 0 end
+	local exp = a.exp
+	if a.exp > max then
+		a.exp = max
+	end
+	if a.man == 0 or exp <= 0 then return 0 end
+	return (math.log10(exp + 1) + 1) * inv * val.man
+end
+
+function Bn.lbdecode(val: number): Bn
+	if val == 0 then return Bn.Zero end
+	local s = math.sign(val)
+	val = math.abs(val)
+	local new = {1, 10^(val/inv-1)-1}
+	new = Bn.sub(new, 1)
+	return {man=s, exp=new.exp}
+end
+
+function Bn.min(...)
+	local args = {}
+	if #args == 0 then return Bn.Zero end
+	local best = Bn.convert(args[1])
+	for i = 2, #args do
+		local val = Bn.convert(args[i])
+		if Bn.cmp(val, best) < 0 then
+			best = val
+		end
+	end
+	return best
+end
+
+function Bn.max(...)
+	local args = {...}
+	if #args == 0 then return Bn.Zero end
+	local best = Bn.convert(args[1])
+	for i = 2, #args do
+		local val = Bn.convert(args[i])
+		if Bn.cmp(val, best) > 0 then
+			best = val
+		end
+	end
+	return best
+end
+
+function Bn.clamp(val, min, max)
+	val, min, max = Bn.convert(val), Bn.convert(min), Bn.convert(max)
+	if Bn.cmp(min, max) > 0 then
+		min, max = max, min
+	end
+	if Bn.cmp(val, min) < 0 then
+		return min
+	elseif Bn.cmp(val, max) > 0 then
+		return max
+	end
+	return val
+end
+
+function Bn.encodeData(val, oldData)
+	local new = val
+	if oldData then
+		local old = Bn.lbdecode(oldData)
+		new = Bn.max(old, new)
+	end
+	return Bn.lbencode(new)
 end
 
 return Bn
